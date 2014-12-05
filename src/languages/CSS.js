@@ -3,6 +3,8 @@
 define(function (require, exports, module) {
     "use strict";
 
+    var EditorManager = brackets.getModule("editor/EditorManager");
+
     function _getTypeClass(name) {
         var classes = {
             "#": "id",
@@ -34,16 +36,17 @@ define(function (require, exports, module) {
      * @returns {Array} List of outline entries.
      */
     function getOutlineList(lines) {
-        var regex =  /([^\r\n,{}]+)((?=[^}]*\{)|\s*\{)/g;
+        var text = lines.join('\n');
+        var regex =  /.(-?[\w !@#$%^&*()_+\-=\[\];':"\\|.<>\/?~]+)(?![^{]*\})/g;
         var result = [];
-        lines.forEach(function (line, index) {
-            var match = regex.exec(line);
-            while (match !== null) {
-                var name = match[1].trim();
-                result.push(_createListEntry(name, index, line.length));
-                match = regex.exec(line);
-            }
-        });
+        var cm = EditorManager.getActiveEditor()._codeMirror;
+        var match = regex.exec(text);
+        while (match !== null) {
+            var name = match[0].trim();
+            var position = cm.posFromIndex(match.index);
+            result.push(_createListEntry(name, position.line, lines[position.line].length));
+            match = regex.exec(text);
+        }
         return result;
     }
 
